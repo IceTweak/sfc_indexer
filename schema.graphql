@@ -1,0 +1,33 @@
+type User @entity {
+  "User address"
+  id: ID!
+  events: [Event!]! @derivedFrom(field: "user")
+}
+
+type Token @entity {
+  id: ID!
+  name: String!
+  transfers: [Transfer!]! @derivedFrom(field: "token")
+}
+
+type Holders @entity {
+  sfc: BigInt!
+  sfcR: BigInt!
+}
+
+type Transfer {
+  token: Token!
+  from: User!
+  to: User!
+  amount: BigInt!
+  txHash: String!
+}
+
+union EventLog = Transfer
+
+type Event @entity {
+  id: ID!
+  user: User!
+  event: EventLog
+  createdAt: DateTime!
+}
