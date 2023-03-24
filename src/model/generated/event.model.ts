@@ -17,7 +17,7 @@ export class Event {
     user!: User
 
     @Column_("jsonb", {transformer: {to: obj => obj == null ? undefined : obj.toJSON(), from: obj => obj == null ? undefined : fromJsonEventLog(obj)}, nullable: true})
-    event!: EventLog | undefined | null
+    eventLog!: EventLog | undefined | null
 
     @Column_("timestamp with time zone", {nullable: false})
     createdAt!: Date

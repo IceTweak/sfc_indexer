@@ -28,6 +28,6 @@ union EventLog = Transfer
 type Event @entity {
   id: ID!
   user: User!
-  event: EventLog
+  eventLog: EventLog
   createdAt: DateTime!
 }

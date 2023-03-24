@@ -1,6 +1,7 @@
 import assert from "assert"
 import * as marshal from "./marshal"
 import {Token} from "./token.model"
+import {User} from "./user.model"
 
 export class Transfer {
     public readonly isTypeOf = 'Transfer'
