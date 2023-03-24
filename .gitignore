@@ -4,5 +4,8 @@
 
 /**Versions.json
 
+#ignore db migrations
+/db
+
 # IDE files
 /.idea
