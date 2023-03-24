@@ -33,10 +33,10 @@ const processor = new EvmBatchProcessor()
 // For topics and decode thoose event
 const erc20Transfer = erc20.events.Transfer;
 const tokenName: Map<string, string> = new Map([
-  [SFC_OLD_ADDR, 'SFC Old'],
-  [SFC_2_ADDR, 'SFC 2'],
-  [SFCR_ADDR, 'SFCR'],
-  [SFCR_2_ADDR, 'SFCR 2'],
+  [addresses[0], 'SFC Old'],
+  [addresses[1], 'SFC 2'],
+  [addresses[2], 'SFCR'],
+  [addresses[3], 'SFCR 2'],
 ])
 
 processor.run(database, async (ctx) => {
@@ -45,32 +45,36 @@ processor.run(database, async (ctx) => {
   for (let block of ctx.blocks) {
     for (let item of block.items) {
       if (item.kind !== 'evmLog') continue
-
-      if (item.evmLog.topics[0] === erc20Transfer.topic) {
-        if (item.address === SFC_OLD_ADDR) {
+      
+      if (item.address === addresses[0]) {
+        if (item.evmLog.topics[0] === erc20Transfer.topic) {
           events.add(
-            await handleTransferEvent(ctx, item, block, SFC_OLD_ADDR)
+            await handleTransferEvent(ctx, item, block, addresses[0])
           )
-          
-        } else if (item.address === SFC_2_ADDR) {
+        } 
+      } else if (item.address === addresses[1]) {
+        if (item.evmLog.topics[0] === erc20Transfer.topic) {
           events.add(
-            await handleTransferEvent(ctx, item, block, SFC_2_ADDR)
+            await handleTransferEvent(ctx, item, block, addresses[1])
           )
-        } else if (item.address === SFCR_ADDR) {
+        } 
+      } else if (item.address === addresses[2]) {
+        if (item.evmLog.topics[0] === erc20Transfer.topic) {
           events.add(
-            await handleTransferEvent(ctx, item, block, SFCR_ADDR)
+            await handleTransferEvent(ctx, item, block, addresses[2])
           )
-
-        } else if (item.address === SFCR_2_ADDR) {
+        } 
+      } else if (item.address === addresses[3]) {
+        if (item.evmLog.topics[0] === erc20Transfer.topic) {
           events.add(
-            await handleTransferEvent(ctx, item, block, SFCR_2_ADDR)
+            await handleTransferEvent(ctx, item, block, addresses[3])
           )
-        }
+        } 
       }
     }
+    await ctx.store.save([...events]);
   }
-  await ctx.store.save([...events]);
-})
+});
 
 async function handleTransferEvent(
   ctx: BatchHandlerContext<Store, AddLogItem<LogItem<false> | TransactionItem<false>, LogItem<{ evmLog: { topics: true; data: true; }; transaction: { hash: true; }; }>>>, 
@@ -96,7 +100,7 @@ async function handleTransferEvent(
 
   let event = new Event({
     id: `${item.transaction.hash}-${item.evmLog.index.toString()}`,
-    createdAt: new Date(block.header.timestamp)
+    createdAt: new Date(block.header.timestamp),
   });
 
   let user: User | null;
@@ -115,22 +119,23 @@ async function handleTransferEvent(
       name: tokenName.get(tokenId),
     });
   }
+
+  // set event token 
+  event.token = token;
   
   user = await findOrCreateUser(from);
 
   let transfer: Transfer = new Transfer({
-    token: token.id,
     from: user.id,
     to: (await findOrCreateUser(to)).id,
     amount: value.toBigInt(),
     txHash: item.transaction.hash,
   });
-  // push transfer linked to this token
-  token.transfers.push(transfer);
-  await tokenRepo.save(token);
   // set transfer and user to eventLog column of Event entity
   event.eventLog = transfer;
   event.user = user;
+  // save token to repo
+  await tokenRepo.save(token);
     
   return event;
 }
