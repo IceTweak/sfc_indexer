@@ -1,6 +1,7 @@
 import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, ManyToOne as ManyToOne_, Index as Index_} from "typeorm"
 import * as marshal from "./marshal"
 import {User} from "./user.model"
+import {Token} from "./token.model"
 import {EventLog, fromJsonEventLog} from "./_eventLog"
 
 @Entity_()
@@ -15,6 +16,10 @@ export class Event {
     @Index_()
     @ManyToOne_(() => User, {nullable: true})
     user!: User
+
+    @Index_()
+    @ManyToOne_(() => Token, {nullable: true})
+    token!: Token
 
     @Column_("jsonb", {transformer: {to: obj => obj == null ? undefined : obj.toJSON(), from: obj => obj == null ? undefined : fromJsonEventLog(obj)}, nullable: true})
     eventLog!: EventLog | undefined | null

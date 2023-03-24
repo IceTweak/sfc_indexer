@@ -1,11 +1,9 @@
 import assert from "assert"
 import * as marshal from "./marshal"
-import {Token} from "./token.model"
 import {User} from "./user.model"
 
 export class Transfer {
     public readonly isTypeOf = 'Transfer'
-    private _token!: string
     private _from!: string
     private _to!: string
     private _amount!: bigint
@@ -14,21 +12,11 @@ export class Transfer {
     constructor(props?: Partial<Omit<Transfer, 'toJSON'>>, json?: any) {
         Object.assign(this, props)
         if (json != null) {
-            this._token = marshal.string.fromJSON(json.token)
             this._from = marshal.string.fromJSON(json.from)
             this._to = marshal.string.fromJSON(json.to)
             this._amount = marshal.bigint.fromJSON(json.amount)
             this._txHash = marshal.string.fromJSON(json.txHash)
         }
-    }
-
-    get token(): string {
-        assert(this._token != null, 'uninitialized access')
-        return this._token
-    }
-
-    set token(value: string) {
-        this._token = value
     }
 
     get from(): string {
@@ -70,7 +58,6 @@ export class Transfer {
     toJSON(): object {
         return {
             isTypeOf: this.isTypeOf,
-            token: this.token,
             from: this.from,
             to: this.to,
             amount: marshal.bigint.toJSON(this.amount),

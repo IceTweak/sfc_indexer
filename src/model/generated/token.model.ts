@@ -1,6 +1,5 @@
-import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_} from "typeorm"
-import * as marshal from "./marshal"
-import {Transfer} from "./_transfer"
+import {Entity as Entity_, Column as Column_, PrimaryColumn as PrimaryColumn_, OneToMany as OneToMany_} from "typeorm"
+import {Event} from "./event.model"
 
 @Entity_()
 export class Token {
@@ -14,6 +13,6 @@ export class Token {
     @Column_("text", {nullable: false})
     name!: string
 
-    @Column_("jsonb", {transformer: {to: obj => obj.map((val: any) => val.toJSON()), from: obj => obj == null ? undefined : marshal.fromList(obj, val => new Transfer(undefined, marshal.nonNull(val)))}, nullable: false})
-    transfers!: (Transfer)[]
+    @OneToMany_(() => Event, e => e.token)
+    events!: Event[]
 }
