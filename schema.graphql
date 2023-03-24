@@ -7,16 +7,10 @@ type User @entity {
 type Token @entity {
   id: ID!
   name: String!
-  transfers: [Transfer!]! @derivedFrom(field: "token")
-}
-
-type Holders @entity {
-  sfc: BigInt!
-  sfcR: BigInt!
+  events: [Event!]! @derivedFrom(field: "token")
 }
 
 type Transfer {
-  token: Token!
   from: User!
   to: User!
   amount: BigInt!
@@ -28,6 +22,7 @@ union EventLog = Transfer
 type Event @entity {
   id: ID!
   user: User!
+  token: Token!
   eventLog: EventLog
   createdAt: DateTime!
 }
