@@ -9,7 +9,7 @@ import { User, Transfer, Token, Event } from './model';
 import * as erc20 from './abi/erc20';
 
 // Convert checksumed addresses to lowercase
-const addresses = [SFC_OLD_ADDR, SFC_2_ADDR, SFCR_2_ADDR, SFCR_ADDR].map((addr) => addr.toLowerCase())
+const addresses = [SFC_OLD_ADDR, SFC_2_ADDR, SFCR_ADDR, SFCR_2_ADDR].map((addr) => addr.toLowerCase())
 
 const database = new TypeormDatabase();
 const processor = new EvmBatchProcessor()
@@ -40,7 +40,7 @@ const tokenName: Map<string, string> = new Map([
 ])
 
 processor.run(database, async (ctx) => {
-  const events: Set<Event> = new Set();
+  const events: Map<string, Event> = new Map();
 
   for (let block of ctx.blocks) {
     for (let item of block.items) {
@@ -48,32 +48,48 @@ processor.run(database, async (ctx) => {
       
       if (item.address === addresses[0]) {
         if (item.evmLog.topics[0] === erc20Transfer.topic) {
-          events.add(
-            await handleTransferEvent(ctx, item, block, addresses[0])
-          )
+          const {eventId, event} = await handleTransferEvent(
+            ctx, 
+            item, 
+            block, 
+            addresses[0]
+          );
+          events.set(eventId, event);
         } 
       } else if (item.address === addresses[1]) {
         if (item.evmLog.topics[0] === erc20Transfer.topic) {
-          events.add(
-            await handleTransferEvent(ctx, item, block, addresses[1])
-          )
+          const {eventId, event} = await handleTransferEvent(
+            ctx, 
+            item, 
+            block, 
+            addresses[1]
+          );
+          events.set(eventId, event);
         } 
       } else if (item.address === addresses[2]) {
         if (item.evmLog.topics[0] === erc20Transfer.topic) {
-          events.add(
-            await handleTransferEvent(ctx, item, block, addresses[2])
-          )
+          const {eventId, event} = await handleTransferEvent(
+            ctx, 
+            item, 
+            block, 
+            addresses[2]
+          );
+          events.set(eventId, event);
         } 
       } else if (item.address === addresses[3]) {
         if (item.evmLog.topics[0] === erc20Transfer.topic) {
-          events.add(
-            await handleTransferEvent(ctx, item, block, addresses[3])
-          )
+          const {eventId, event} = await handleTransferEvent(
+            ctx, 
+            item, 
+            block, 
+            addresses[3]
+          );
+          events.set(eventId, event);
         } 
       }
     }
-    await ctx.store.save([...events]);
   }
+  await ctx.store.save([...events.values()]);
 });
 
 async function handleTransferEvent(
@@ -81,7 +97,7 @@ async function handleTransferEvent(
   item: { evmLog: { id: string; address: string; index: number; transactionIndex: number; data: string; topics: string[]; }; address: string; transaction: { id: string; hash: string; to?: string | undefined; index: number; }; kind: "evmLog"; },
   block: BatchBlock<AddLogItem<LogItem<false> | TransactionItem<false>, LogItem<{ evmLog: { topics: true; data: true; }; transaction: { hash: true; }; }>>>,
   tokenId: string
-  ): Promise<Event> {
+  ): Promise<{ eventId: string, event: Event }> {
 
   const findOrCreateUser = async (id: string): Promise<User> => {
     const mgr: EntityManager = await ctx.store["em"]();
@@ -137,5 +153,5 @@ async function handleTransferEvent(
   // save token to repo
   await tokenRepo.save(token);
     
-  return event;
+  return {eventId: event.id, event: event};
 }
