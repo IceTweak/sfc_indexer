@@ -3,7 +3,13 @@ import { AddLogItem, LogItem, TransactionItem } from '@subsquid/evm-processor/li
 import { Store, TypeormDatabase } from '@subsquid/typeorm-store'
 import { lookupArchive } from '@subsquid/archive-registry'
 import { EntityManager, In } from 'typeorm';
-import { SFC_OLD_ADDR, SFC_2_ADDR, SFCR_2_ADDR, SFCR_ADDR, DEPLOYMENT_BLOCK } from './constants';
+import { 
+  SFC_OLD_ADDR, 
+  SFC_2_ADDR, 
+  SFCR_2_ADDR, 
+  SFCR_ADDR, 
+  DEPLOYMENT_BLOCK, 
+} from './constants';
 import { User, Transfer, Token, Event } from './model';
 
 import * as erc20 from './abi/erc20';
@@ -18,7 +24,9 @@ const processor = new EvmBatchProcessor()
 })
 .addLog(addresses, {
     range: {from: DEPLOYMENT_BLOCK},
-    filter: [[erc20.events.Transfer.topic]],
+    // filter by topic0 - Transfer
+    // ? Не фильтруется по erc20 abi топику
+    filter: [['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']],
     data: {
         evmLog: {
             topics: true,
@@ -92,10 +100,60 @@ processor.run(database, async (ctx) => {
   await ctx.store.save([...events.values()]);
 });
 
+// Inferred types
+type Ctx = BatchHandlerContext<Store, AddLogItem<LogItem<false> | TransactionItem<false>, LogItem<{
+  evmLog: {
+    topics: true;
+    data: true;
+  };
+  transaction: {
+    hash: true;
+  };
+}>>>;
+
+type Item = {
+  evmLog: {
+    id: string;
+    address: string;
+    index: number;
+    transactionIndex: number;
+    data: string;
+    topics: string[];
+  };
+  address: string;
+  transaction: {
+    id: string;
+    hash: string;
+    to?: string | undefined;
+    index: number;
+  };
+  kind: "evmLog";
+};
+
+type Block = BatchBlock<AddLogItem<LogItem<false> | TransactionItem<false>, LogItem<{
+  evmLog: {
+    topics: true;
+    data: true;
+  };
+  transaction: {
+    hash: true;
+  };
+}>>>;
+// end types
+
+
+/**
+ * Extract transfer event fields and save to object
+ * @param {Ctx} ctx Batch context
+ * @param {Item} item EvmLog item
+ * @param {Block} block Block of an EvmLog items
+ * @param {string} tokenId Token address for which, event is met
+ * @returns Event id and event entity 
+ */
 async function handleTransferEvent(
-  ctx: BatchHandlerContext<Store, AddLogItem<LogItem<false> | TransactionItem<false>, LogItem<{ evmLog: { topics: true; data: true; }; transaction: { hash: true; }; }>>>, 
-  item: { evmLog: { id: string; address: string; index: number; transactionIndex: number; data: string; topics: string[]; }; address: string; transaction: { id: string; hash: string; to?: string | undefined; index: number; }; kind: "evmLog"; },
-  block: BatchBlock<AddLogItem<LogItem<false> | TransactionItem<false>, LogItem<{ evmLog: { topics: true; data: true; }; transaction: { hash: true; }; }>>>,
+  ctx: Ctx, 
+  item: Item,
+  block: Block,
   tokenId: string
   ): Promise<{ eventId: string, event: Event }> {
 
