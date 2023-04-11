@@ -2,6 +2,10 @@ type User @entity {
   "User address"
   id: ID!
   events: [Event!]! @derivedFrom(field: "user")
+  sfcOld: BigInt!
+  sfc2: BigInt!
+  sfcr: BigInt!
+  sfcr2: BigInt!
 }
 
 type Token @entity {

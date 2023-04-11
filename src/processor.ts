@@ -2,7 +2,7 @@ import { BatchBlock, BatchHandlerContext, BatchProcessorItem, EvmBatchProcessor,
 import { AddLogItem, LogItem, TransactionItem } from '@subsquid/evm-processor/lib/interfaces/dataSelection'
 import { Store, TypeormDatabase } from '@subsquid/typeorm-store'
 import { lookupArchive } from '@subsquid/archive-registry'
-import { EntityManager, In } from 'typeorm';
+import { EntityManager } from 'typeorm';
 import { 
   SFC_OLD_ADDR, 
   SFC_2_ADDR, 
@@ -163,7 +163,14 @@ async function handleTransferEvent(
   
     let user = await repo.findOneBy({ id });
     if (!user) {
-      user = new User({ id });
+      user = new User({ 
+        id,
+        sfcOld: BigInt(0),
+        sfc2: BigInt(0),
+        sfcr: BigInt(0),
+        sfcr2: BigInt(0),
+      });
+      
       await repo.save(user);
     }
     return user;
@@ -171,6 +178,7 @@ async function handleTransferEvent(
 
   const mgr: EntityManager = await ctx.store["em"]();
   const tokenRepo = mgr.getRepository(Token);
+  const userRepo = mgr.getRepository(User);
 
   let event = new Event({
     id: `${item.transaction.hash}-${item.evmLog.index.toString()}`,
@@ -198,10 +206,34 @@ async function handleTransferEvent(
   event.token = token;
   
   user = await findOrCreateUser(from);
+  const transferTo = await findOrCreateUser(to);
+
+  // TODO наверное можно по другому ?
+  switch (token.name) {
+    case "SFC Old": 
+      user.sfcOld -= value.toBigInt();
+      transferTo.sfcOld += value.toBigInt();
+      break
+    case "SFC 2":
+      user.sfc2 -= value.toBigInt();
+      transferTo.sfc2 += value.toBigInt(); 
+      break
+    case "SFCR":
+      user.sfcr -= value.toBigInt();
+      transferTo.sfcr += value.toBigInt(); 
+      break
+    case "SFCR 2":
+      user.sfcr2 -= value.toBigInt();
+      transferTo.sfcr2 += value.toBigInt(); 
+      break
+  }
+
+  userRepo.save(user);
+  userRepo.save(transferTo);
 
   let transfer: Transfer = new Transfer({
     from: user.id,
-    to: (await findOrCreateUser(to)).id,
+    to: transferTo.id,
     amount: value.toBigInt(),
     txHash: item.transaction.hash,
   });
