@@ -1,5 +1,5 @@
 manifestVersion: subsquid.io/v0.1
-name: sfc_indexer
+name: sfc-indexer
 version: 1
 description: 'The very first evm squid from manifest  '
 build: 
