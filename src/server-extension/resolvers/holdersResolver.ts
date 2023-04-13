@@ -5,10 +5,10 @@ import { User } from "../../model/generated/user.model";
 
 @ObjectType()
 export class Holders {
-  @Field(() => Number, { nullable: false })
-  sfcHolders!: number;
-  @Field(() => Number, { nullable: false })
-  sfcrHolders!: number
+  @Field(() => BigInt, { nullable: false })
+  sfcHolders!: BigInt;
+  @Field(() => BigInt, { nullable: false })
+  sfcrHolders!: BigInt
 
   constructor(props: Partial<Holders>) {
     Object.assign(this, props);
@@ -33,8 +33,8 @@ export class HoldersResolver {
     const sfcHoldersCount = await manager.getRepository(User).query(sfcQuery);
     const sfcrHoldersCount = await manager.getRepository(User).query(sfcrQuery);
     const holders = new Holders({
-      sfcHolders: sfcHoldersCount,
-      sfcrHolders: sfcrHoldersCount,
+      sfcHolders: BigInt(sfcHoldersCount[0].count),
+      sfcrHolders: BigInt(sfcrHoldersCount[0].count),
     });
     return holders;
   }
